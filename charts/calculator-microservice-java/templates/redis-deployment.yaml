@@ -1,0 +1,34 @@
+{{- if and (eq .Values.cache.type "redis") .Values.cache.redis.deploy }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "calculator-microservice-java.fullname" . }}-redis
+  labels:
+    {{- include "calculator-microservice-java.labels" . | nindent 4 }}
+    app.kubernetes.io/component: redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "calculator-microservice-java.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: redis
+  template:
+    metadata:
+      labels:
+        {{- include "calculator-microservice-java.labels" . | nindent 8 }}
+        app.kubernetes.io/component: redis
+    spec:
+      containers:
+        - name: redis
+          image: "{{ .Values.cache.redis.image.repository }}:{{ .Values.cache.redis.image.tag }}"
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          command: ["redis-server"]
+          ports:
+            - name: redis
+              containerPort: 6379
+              protocol: TCP
+          {{- with .Values.cache.redis.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+{{- end }}

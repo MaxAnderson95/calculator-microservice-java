@@ -1,0 +1,17 @@
+{{- if .Values.services.frontend.enabled }}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "calculator-microservice-java.fullname" . }}-test-connection"
+  labels:
+    {{- include "calculator-microservice-java.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+spec:
+  containers:
+    - name: wget
+      image: busybox
+      command: ['wget']
+      args: ['{{ include "calculator-microservice-java.fullname" . }}-frontend:{{ .Values.services.frontend.service.port }}']
+  restartPolicy: Never
+{{- end }}

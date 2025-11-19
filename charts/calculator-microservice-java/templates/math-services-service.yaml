@@ -1,0 +1,23 @@
+{{- range $serviceName := list "add" "subtract" "multiply" "divide" }}
+{{- $service := index $.Values.services $serviceName }}
+{{- if $service.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "calculator-microservice-java.fullname" $ }}-{{ $serviceName }}
+  labels:
+    {{- include "calculator-microservice-java.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: {{ $serviceName }}
+spec:
+  type: {{ $service.service.type }}
+  ports:
+    - port: {{ $service.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "calculator-microservice-java.selectorLabels" $ | nindent 4 }}
+    app.kubernetes.io/component: {{ $serviceName }}
+{{- end }}
+{{- end }}

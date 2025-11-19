@@ -1,0 +1,40 @@
+{{- if .Values.services.frontend.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "calculator-microservice-java.fullname" . }}-frontend
+  labels:
+    {{- include "calculator-microservice-java.labels" . | nindent 4 }}
+    app.kubernetes.io/component: frontend
+data:
+  PORT: {{ .Values.services.frontend.service.port | quote }}
+
+  # Service URLs
+  ADD_SERVICE_URL: "http://{{ include "calculator-microservice-java.fullname" . }}-add:{{ .Values.services.add.service.port }}"
+  SUBTRACT_SERVICE_URL: "http://{{ include "calculator-microservice-java.fullname" . }}-subtract:{{ .Values.services.subtract.service.port }}"
+  MULTIPLY_SERVICE_URL: "http://{{ include "calculator-microservice-java.fullname" . }}-multiply:{{ .Values.services.multiply.service.port }}"
+  DIVIDE_SERVICE_URL: "http://{{ include "calculator-microservice-java.fullname" . }}-divide:{{ .Values.services.divide.service.port }}"
+
+  # Cache configuration
+  CACHE_TYPE: {{ .Values.cache.type | quote }}
+  {{- if eq .Values.cache.type "redis" }}
+  REDIS_HOST: {{ include "calculator-microservice-java.fullname" . }}-redis
+  REDIS_PORT: "6379"
+  {{- end }}
+
+  # Chaos engineering
+  {{- if ne .Values.services.frontend.chaos.enabled nil }}
+  CHAOS_ENABLED: {{ .Values.services.frontend.chaos.enabled | quote }}
+  {{- else }}
+  CHAOS_ENABLED: {{ .Values.global.chaos.enabled | quote }}
+  {{- end }}
+  {{- $chaosPercent := "" }}
+  {{- if ne .Values.services.frontend.chaos.percent nil }}
+    {{- $chaosPercent = .Values.services.frontend.chaos.percent }}
+  {{- else if .Values.global.chaos.percent }}
+    {{- $chaosPercent = .Values.global.chaos.percent }}
+  {{- end }}
+  {{- if $chaosPercent }}
+  CHAOS_PERCENT: {{ $chaosPercent | quote }}
+  {{- end }}
+{{- end }}

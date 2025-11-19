@@ -1,0 +1,226 @@
+# Default values for calculator-microservice-java
+# This is a YAML-formatted file.
+
+# Global settings
+global:
+  # Image pull policy for all services
+  imagePullPolicy: IfNotPresent
+
+  # Global chaos engineering settings (applies to all services unless overridden)
+  chaos:
+    enabled: false
+    percent: ""  # Empty string means use service default (5%)
+
+# Database configuration
+database:
+  # Type: "memory" (H2 in-memory) or "postgres"
+  type: memory
+
+  # Postgres settings (only used if type: postgres)
+  postgres:
+    # Whether to deploy postgres as part of this chart
+    deploy: true
+    image:
+      repository: postgres
+      tag: 16-alpine
+    # Database credentials
+    database: postgres
+    username: postgres
+    password: postgres
+    # Storage
+    persistence:
+      enabled: true
+      size: 1Gi
+      storageClass: ""
+    # Resource limits
+    resources: {}
+
+# Cache configuration
+cache:
+  # Type: "memory" (in-memory) or "redis"
+  type: memory
+
+  # Redis settings (only used if type: redis)
+  redis:
+    # Whether to deploy redis as part of this chart
+    deploy: true
+    image:
+      repository: redis
+      tag: alpine
+    # Resource limits
+    resources: {}
+
+# Service-specific configurations
+services:
+  # Frontend service
+  frontend:
+    enabled: true
+    replicaCount: 1
+    image:
+      repository: ghcr.io/maxanderson95/calculator-microservice-java/frontend
+      tag: latest
+    service:
+      type: ClusterIP
+      port: 80
+    # Frontend-specific chaos settings (overrides global if set)
+    chaos:
+      enabled: null  # null means use global setting
+      percent: null
+    resources: {}
+    # Health check probes
+    livenessProbe:
+      httpGet:
+        path: /actuator/health
+        port: http
+      initialDelaySeconds: 30
+      periodSeconds: 10
+    readinessProbe:
+      httpGet:
+        path: /actuator/health
+        port: http
+      initialDelaySeconds: 20
+      periodSeconds: 5
+
+  # Add service
+  add:
+    enabled: true
+    replicaCount: 1
+    image:
+      repository: ghcr.io/maxanderson95/calculator-microservice-java/add
+      tag: latest
+    service:
+      type: ClusterIP
+      port: 80
+    chaos:
+      enabled: null
+      percent: null
+    resources: {}
+    livenessProbe:
+      httpGet:
+        path: /actuator/health
+        port: http
+      initialDelaySeconds: 30
+      periodSeconds: 10
+    readinessProbe:
+      httpGet:
+        path: /actuator/health
+        port: http
+      initialDelaySeconds: 20
+      periodSeconds: 5
+
+  # Subtract service
+  subtract:
+    enabled: true
+    replicaCount: 1
+    image:
+      repository: ghcr.io/maxanderson95/calculator-microservice-java/subtract
+      tag: latest
+    service:
+      type: ClusterIP
+      port: 80
+    chaos:
+      enabled: null
+      percent: null
+    resources: {}
+    livenessProbe:
+      httpGet:
+        path: /actuator/health
+        port: http
+      initialDelaySeconds: 30
+      periodSeconds: 10
+    readinessProbe:
+      httpGet:
+        path: /actuator/health
+        port: http
+      initialDelaySeconds: 20
+      periodSeconds: 5
+
+  # Multiply service
+  multiply:
+    enabled: true
+    replicaCount: 1
+    image:
+      repository: ghcr.io/maxanderson95/calculator-microservice-java/multiply
+      tag: latest
+    service:
+      type: ClusterIP
+      port: 80
+    chaos:
+      enabled: null
+      percent: null
+    resources: {}
+    livenessProbe:
+      httpGet:
+        path: /actuator/health
+        port: http
+      initialDelaySeconds: 30
+      periodSeconds: 10
+    readinessProbe:
+      httpGet:
+        path: /actuator/health
+        port: http
+      initialDelaySeconds: 20
+      periodSeconds: 5
+
+  # Divide service
+  divide:
+    enabled: true
+    replicaCount: 1
+    image:
+      repository: ghcr.io/maxanderson95/calculator-microservice-java/divide
+      tag: latest
+    service:
+      type: ClusterIP
+      port: 80
+    chaos:
+      enabled: null
+      percent: null
+    resources: {}
+    livenessProbe:
+      httpGet:
+        path: /actuator/health
+        port: http
+      initialDelaySeconds: 30
+      periodSeconds: 10
+    readinessProbe:
+      httpGet:
+        path: /actuator/health
+        port: http
+      initialDelaySeconds: 20
+      periodSeconds: 5
+
+# Ingress configuration (frontend only)
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # cert-manager.io/cluster-issuer: letsencrypt-prod
+  hosts:
+    - host: calculator.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+  #  - secretName: calculator-tls
+  #    hosts:
+  #      - calculator.local
+
+# Service Account
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+# Pod annotations and labels
+podAnnotations: {}
+podLabels: {}
+
+# Security contexts
+podSecurityContext: {}
+securityContext: {}
+
+# Node selector, tolerations, and affinity (applies to all services)
+nodeSelector: {}
+tolerations: []
+affinity: {}

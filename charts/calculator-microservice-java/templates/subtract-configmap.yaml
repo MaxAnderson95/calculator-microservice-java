@@ -1,0 +1,30 @@
+{{- if .Values.services.subtract.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "calculator-microservice-java.fullname" . }}-subtract
+  labels:
+    {{- include "calculator-microservice-java.labels" . | nindent 4 }}
+    app.kubernetes.io/component: subtract
+data:
+  PORT: {{ .Values.services.subtract.service.port | quote }}
+
+  # Service URLs
+  ADD_SERVICE_URL: "http://{{ include "calculator-microservice-java.fullname" . }}-add:{{ .Values.services.add.service.port }}"
+
+  # Chaos engineering
+  {{- if ne .Values.services.subtract.chaos.enabled nil }}
+  CHAOS_ENABLED: {{ .Values.services.subtract.chaos.enabled | quote }}
+  {{- else }}
+  CHAOS_ENABLED: {{ .Values.global.chaos.enabled | quote }}
+  {{- end }}
+  {{- $chaosPercent := "" }}
+  {{- if ne .Values.services.subtract.chaos.percent nil }}
+    {{- $chaosPercent = .Values.services.subtract.chaos.percent }}
+  {{- else if .Values.global.chaos.percent }}
+    {{- $chaosPercent = .Values.global.chaos.percent }}
+  {{- end }}
+  {{- if $chaosPercent }}
+  CHAOS_PERCENT: {{ $chaosPercent | quote }}
+  {{- end }}
+{{- end }}

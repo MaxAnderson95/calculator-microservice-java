@@ -1,0 +1,57 @@
+{{- if and (eq .Values.database.type "postgres") .Values.database.postgres.deploy }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "calculator-microservice-java.fullname" . }}-postgres
+  labels:
+    {{- include "calculator-microservice-java.labels" . | nindent 4 }}
+    app.kubernetes.io/component: postgres
+spec:
+  serviceName: {{ include "calculator-microservice-java.fullname" . }}-postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "calculator-microservice-java.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: postgres
+  template:
+    metadata:
+      labels:
+        {{- include "calculator-microservice-java.labels" . | nindent 8 }}
+        app.kubernetes.io/component: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: "{{ .Values.database.postgres.image.repository }}:{{ .Values.database.postgres.image.tag }}"
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          ports:
+            - name: postgres
+              containerPort: 5432
+              protocol: TCP
+          envFrom:
+            - secretRef:
+                name: {{ include "calculator-microservice-java.fullname" . }}-postgres
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+          {{- with .Values.database.postgres.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+  {{- if .Values.database.postgres.persistence.enabled }}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        {{- if .Values.database.postgres.persistence.storageClass }}
+        storageClassName: {{ .Values.database.postgres.persistence.storageClass }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.database.postgres.persistence.size }}
+  {{- else }}
+      volumes:
+        - name: data
+          emptyDir: {}
+  {{- end }}
+{{- end }}

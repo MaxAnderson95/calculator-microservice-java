@@ -1,0 +1,54 @@
+Calculator Microservice has been deployed!
+
+Deployed Services:
+{{- if .Values.services.frontend.enabled }}
+  ✓ Frontend Service
+{{- end }}
+{{- if .Values.services.add.enabled }}
+  ✓ Add Service
+{{- end }}
+{{- if .Values.services.subtract.enabled }}
+  ✓ Subtract Service
+{{- end }}
+{{- if .Values.services.multiply.enabled }}
+  ✓ Multiply Service
+{{- end }}
+{{- if .Values.services.divide.enabled }}
+  ✓ Divide Service
+{{- end }}
+
+Infrastructure:
+  Cache: {{ .Values.cache.type }}
+{{- if and (eq .Values.cache.type "redis") .Values.cache.redis.deploy }}
+  ✓ Redis deployed
+{{- end }}
+  Database: {{ .Values.database.type }}
+{{- if and (eq .Values.database.type "postgres") .Values.database.postgres.deploy }}
+  ✓ PostgreSQL deployed
+{{- end }}
+
+Chaos Engineering:
+  Global Chaos: {{ if .Values.global.chaos.enabled }}ENABLED{{ else }}DISABLED{{ end }}
+{{- if .Values.global.chaos.percent }}
+  Chaos Percentage: {{ .Values.global.chaos.percent }}%
+{{- end }}
+
+Access your application:
+{{- if .Values.ingress.enabled }}
+{{- range $host := .Values.ingress.hosts }}
+  {{- range .paths }}
+  http{{ if $.Values.ingress.tls }}s{{ end }}://{{ $host.host }}{{ .path }}
+  {{- end }}
+{{- end }}
+{{- else }}
+
+To access the frontend service, run:
+
+  export POD_NAME=$(kubectl get pods --namespace {{ .Release.Namespace }} -l "app.kubernetes.io/component=frontend" -o jsonpath="{.items[0].metadata.name}")
+  echo "Visit http://127.0.0.1:8080 to use the calculator"
+  kubectl --namespace {{ .Release.Namespace }} port-forward $POD_NAME 8080:{{ .Values.services.frontend.service.port }}
+
+{{- end }}
+
+To check the status of all services:
+  kubectl get pods --namespace {{ .Release.Namespace }} -l "app.kubernetes.io/instance={{ .Release.Name }}"

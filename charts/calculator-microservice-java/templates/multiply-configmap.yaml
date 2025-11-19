@@ -1,0 +1,27 @@
+{{- if .Values.services.multiply.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "calculator-microservice-java.fullname" . }}-multiply
+  labels:
+    {{- include "calculator-microservice-java.labels" . | nindent 4 }}
+    app.kubernetes.io/component: multiply
+data:
+  PORT: {{ .Values.services.multiply.service.port | quote }}
+
+  # Chaos engineering
+  {{- if ne .Values.services.multiply.chaos.enabled nil }}
+  CHAOS_ENABLED: {{ .Values.services.multiply.chaos.enabled | quote }}
+  {{- else }}
+  CHAOS_ENABLED: {{ .Values.global.chaos.enabled | quote }}
+  {{- end }}
+  {{- $chaosPercent := "" }}
+  {{- if ne .Values.services.multiply.chaos.percent nil }}
+    {{- $chaosPercent = .Values.services.multiply.chaos.percent }}
+  {{- else if .Values.global.chaos.percent }}
+    {{- $chaosPercent = .Values.global.chaos.percent }}
+  {{- end }}
+  {{- if $chaosPercent }}
+  CHAOS_PERCENT: {{ $chaosPercent | quote }}
+  {{- end }}
+{{- end }}

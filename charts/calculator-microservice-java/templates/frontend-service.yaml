@@ -1,0 +1,19 @@
+{{- if .Values.services.frontend.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "calculator-microservice-java.fullname" . }}-frontend
+  labels:
+    {{- include "calculator-microservice-java.labels" . | nindent 4 }}
+    app.kubernetes.io/component: frontend
+spec:
+  type: {{ .Values.services.frontend.service.type }}
+  ports:
+    - port: {{ .Values.services.frontend.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "calculator-microservice-java.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: frontend
+{{- end }}

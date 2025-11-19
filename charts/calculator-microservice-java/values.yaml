@@ -224,3 +224,19 @@ securityContext: {}
 nodeSelector: {}
 tolerations: []
 affinity: {}
+
+# Load Testing configuration
+loadtest:
+  # Enable continuous load testing (disabled by default)
+  enabled: false
+  image:
+    repository: ghcr.io/maxanderson95/calculator-microservice-java/loadtest
+    tag: latest
+  # Resource limits for load test pod
+  resources: {}
+    # limits:
+    #   cpu: 500m
+    #   memory: 512Mi
+    # requests:
+    #   cpu: 250m
+    #   memory: 256Mi

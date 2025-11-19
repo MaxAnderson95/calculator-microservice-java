@@ -1,12 +1,14 @@
-.PHONY: build test clean run-dev run-prod stop load-test-install load-test load-test-quick load-test-soak
+.PHONY: build test clean run-dev run-prod stop load-test load-test-stop
 
-# Build all services
+# Build all services (including loadtest)
 build:
 	@echo "Building all services..."
 	@for service in add subtract multiply divide frontend; do \
 		echo "Building $$service service..."; \
 		cd services/$$service && mvn clean package -DskipTests && cd ../..; \
 	done
+	@echo "Building loadtest service..."
+	@cd services/loadtest && npm install && cd ../..
 
 # Run tests for all services
 test:
@@ -53,26 +55,13 @@ build-ui:
 dev-ui:
 	cd services/frontend/ui && npm run dev
 
-# Install load testing dependencies
-load-test-install:
-	@echo "Installing Artillery and plugins..."
-	npm install
-
-# Run main load test
+# Run continuous load testing (runs in endless loop)
 load-test:
-	@echo "Running main load test..."
-	npm run test:load:report
+	@echo "Starting continuous load testing..."
+	@echo "Press Ctrl+C to stop"
+	@LOADTEST_ENABLED=true docker-compose --profile loadtest up --build loadtest
 
-# Run quick smoke test
-load-test-quick:
-	@echo "Running quick load test..."
-	npm run test:quick:report
-
-# Run soak test (1 hour)
-load-test-soak:
-	@echo "Running soak test (this will take ~1 hour)..."
-	npm run test:soak:report
-
-# Clean load test reports
-load-test-clean:
-	npm run clean
+# Stop load testing
+load-test-stop:
+	@echo "Stopping load test..."
+	@docker-compose --profile loadtest down

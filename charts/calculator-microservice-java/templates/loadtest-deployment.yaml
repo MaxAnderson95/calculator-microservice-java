@@ -1,0 +1,37 @@
+{{- if .Values.loadtest.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "calculator-microservice-java.fullname" . }}-loadtest
+  labels:
+    {{- include "calculator-microservice-java.labels" . | nindent 4 }}
+    app.kubernetes.io/component: loadtest
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "calculator-microservice-java.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: loadtest
+  template:
+    metadata:
+      labels:
+        {{- include "calculator-microservice-java.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: loadtest
+    spec:
+      {{- if .Values.serviceAccount.create }}
+      serviceAccountName: {{ include "calculator-microservice-java.serviceAccountName" . }}
+      {{- end }}
+      containers:
+      - name: loadtest
+        image: "{{ .Values.loadtest.image.repository }}:{{ .Values.loadtest.image.tag | default .Chart.AppVersion }}"
+        imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+        env:
+        - name: TARGET_URL
+          value: "http://{{ include "calculator-microservice-java.fullname" . }}-frontend:{{ .Values.services.frontend.service.port }}"
+        - name: LOADTEST_ENABLED
+          value: "true"
+        {{- with .Values.loadtest.resources }}
+        resources:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+{{- end }}

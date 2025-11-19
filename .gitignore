@@ -52,3 +52,8 @@ Thumbs.db
 # Logs
 logs/
 *.log
+
+# Load Testing
+report*.json
+report*.json.html
+package-lock.json

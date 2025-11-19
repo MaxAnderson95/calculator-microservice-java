@@ -1,0 +1,27 @@
+{
+  "name": "calculator-microservice-load-tests",
+  "version": "1.0.0",
+  "description": "Load testing scripts for calculator microservice",
+  "scripts": {
+    "test:load": "artillery run load-test.yaml",
+    "test:load:report": "artillery run --output report.json load-test.yaml && artillery report report.json",
+    "test:quick": "artillery run load-test-quick.yaml",
+    "test:quick:report": "artillery run --output report-quick.json load-test-quick.yaml && artillery report report-quick.json",
+    "test:soak": "artillery run load-test-soak.yaml",
+    "test:soak:report": "artillery run --output report-soak.json load-test-soak.yaml && artillery report report-soak.json",
+    "test:all": "npm run test:quick && npm run test:load",
+    "clean": "rm -f report*.json report*.json.html"
+  },
+  "keywords": [
+    "load-testing",
+    "artillery",
+    "performance",
+    "microservices"
+  ],
+  "author": "Max Anderson",
+  "license": "MIT",
+  "devDependencies": {
+    "artillery": "^2.0.0",
+    "artillery-plugin-expect": "^2.0.0"
+  }
+}

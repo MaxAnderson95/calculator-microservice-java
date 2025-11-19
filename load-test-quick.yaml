@@ -1,0 +1,47 @@
+config:
+  target: "http://localhost:8000"
+  phases:
+    # Quick smoke test - 2 minutes total
+    - duration: 30
+      arrivalRate: 5
+      name: "Quick Warm-up"
+    - duration: 60
+      arrivalRate: 10
+      rampTo: 30
+      name: "Quick Ramp-up"
+    - duration: 30
+      arrivalRate: 30
+      name: "Quick Peak"
+
+  processor: "./load-test-functions.js"
+
+  # Relaxed thresholds for quick validation
+  ensure:
+    p95: 3000
+    p99: 5000
+
+scenarios:
+  - name: "Quick Mixed Test"
+    weight: 80
+    flow:
+      - post:
+          url: "/api/v1/calculate"
+          beforeRequest: "generateRandomCalculation"
+          json:
+            operation: "{{ operation }}"
+            num1: "{{ num1 }}"
+            num2: "{{ num2 }}"
+          expect:
+            - statusCode: 200
+
+  - name: "Quick Cache Test"
+    weight: 20
+    flow:
+      - post:
+          url: "/api/v1/calculate"
+          json:
+            operation: "add"
+            num1: 10
+            num2: 20
+          expect:
+            - statusCode: 200

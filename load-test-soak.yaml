@@ -1,0 +1,132 @@
+config:
+  target: "http://localhost:8000"
+  phases:
+    # Soak test - 1 hour sustained load to detect memory leaks and degradation
+    - duration: 300  # 5 minutes
+      arrivalRate: 5
+      name: "Warm-up"
+
+    - duration: 600  # 10 minutes
+      arrivalRate: 5
+      rampTo: 20
+      name: "Ramp-up"
+
+    # Main soak phase - 30 minutes of sustained load
+    - duration: 1800  # 30 minutes
+      arrivalRate: 20
+      name: "Soak Test - Sustained Load"
+
+    - duration: 300  # 5 minutes
+      arrivalRate: 20
+      rampTo: 5
+      name: "Ramp-down"
+
+    - duration: 300  # 5 minutes
+      arrivalRate: 5
+      name: "Cool-down"
+
+  processor: "./load-test-functions.js"
+
+  # Ensure performance doesn't degrade over time
+  ensure:
+    p95: 3000
+    p99: 5000
+    max: 10000
+
+  plugins:
+    expect: {}
+      # Track metrics over time to detect degradation
+      metricsInterval: 30  # Report every 30 seconds
+
+scenarios:
+  # Realistic production traffic mix
+  - name: "Production Mix - Add/Subtract"
+    weight: 40
+    flow:
+      - loop:
+          - post:
+              url: "/api/v1/calculate"
+              beforeRequest: "generateAddition"
+              json:
+                operation: "add"
+                num1: "{{ num1 }}"
+                num2: "{{ num2 }}"
+              expect:
+                - statusCode: 200
+          - think: 2
+          - post:
+              url: "/api/v1/calculate"
+              beforeRequest: "generateRandomCalculation"
+              json:
+                operation: "subtract"
+                num1: "{{ num1 }}"
+                num2: "{{ num2 }}"
+              expect:
+                - statusCode: 200
+          - think: 3
+        count: 3
+
+  - name: "Production Mix - Multiply/Divide"
+    weight: 30
+    flow:
+      - loop:
+          - post:
+              url: "/api/v1/calculate"
+              beforeRequest: "generateRandomCalculation"
+              json:
+                operation: "multiply"
+                num1: "{{ num1 }}"
+                num2: "{{ num2 }}"
+              expect:
+                - statusCode: 200
+          - think: 2
+          - post:
+              url: "/api/v1/calculate"
+              beforeRequest: "generateDivision"
+              json:
+                operation: "divide"
+                num1: "{{ num1 }}"
+                num2: "{{ num2 }}"
+              expect:
+                - statusCode: [200, 400]
+          - think: 3
+        count: 3
+
+  - name: "Cache Heavy Workload"
+    weight: 20
+    flow:
+      # Perform the same calculation multiple times to test cache
+      - loop:
+          - post:
+              url: "/api/v1/calculate"
+              json:
+                operation: "multiply"
+                num1: 123
+                num2: 456
+              expect:
+                - statusCode: 200
+          - think: 1
+        count: 10
+
+  - name: "Varied Operations"
+    weight: 10
+    flow:
+      - post:
+          url: "/api/v1/calculate"
+          beforeRequest: "generateRandomCalculation"
+          json:
+            operation: "{{ operation }}"
+            num1: "{{ num1 }}"
+            num2: "{{ num2 }}"
+          expect:
+            - statusCode: 200
+      - think: 2
+      - post:
+          url: "/api/v1/calculate"
+          beforeRequest: "generateLargeNumbers"
+          json:
+            operation: "{{ operation }}"
+            num1: "{{ num1 }}"
+            num2: "{{ num2 }}"
+          expect:
+            - statusCode: 200

@@ -1,0 +1,133 @@
+config:
+  target: "http://localhost:8000"
+  phases:
+    # Phase 1: Warm-up - Low steady load to warm up caches and JVM
+    - duration: 60
+      arrivalRate: 5
+      name: "Warm-up Phase"
+
+    # Phase 2: Gradual Ramp-up - Increase load gradually
+    - duration: 120
+      arrivalRate: 10
+      rampTo: 50
+      name: "Ramp-up Phase"
+
+    # Phase 3: Peak Load - Sustained high load
+    - duration: 180
+      arrivalRate: 50
+      name: "Peak Load Phase"
+
+    # Phase 4: Spike Test - Short burst of very high load
+    - duration: 30
+      arrivalRate: 100
+      name: "Spike Phase"
+
+    # Phase 5: Recovery - Back to sustained load
+    - duration: 60
+      arrivalRate: 50
+      name: "Recovery Phase"
+
+    # Phase 6: Gradual Ramp-down - Decrease load gradually
+    - duration: 120
+      arrivalRate: 50
+      rampTo: 10
+      name: "Ramp-down Phase"
+
+    # Phase 7: Cool-down - Low load to observe system recovery
+    - duration: 60
+      arrivalRate: 5
+      name: "Cool-down Phase"
+
+  # Processor for custom JavaScript functions
+  processor: "./load-test-functions.js"
+
+  # Performance thresholds
+  ensure:
+    # 95th percentile response time should be under 3000ms (accounting for 2s service delay)
+    p95: 3000
+    # 99th percentile response time should be under 5000ms
+    p99: 5000
+    # Max response time should be under 10000ms
+    max: 10000
+
+  # Plugins for enhanced reporting
+  plugins:
+    expect: {}
+
+scenarios:
+  # Scenario 1: Mixed operations with random numbers
+  - name: "Random Calculations"
+    weight: 70
+    flow:
+      - post:
+          url: "/api/v1/calculate"
+          beforeRequest: "generateRandomCalculation"
+          json:
+            operation: "{{ operation }}"
+            num1: "{{ num1 }}"
+            num2: "{{ num2 }}"
+          capture:
+            - json: "$"
+              as: "result"
+          expect:
+            - statusCode: 200
+            - contentType: application/json
+            - hasProperty: result
+
+  # Scenario 2: Addition focused (tests cache effectiveness due to commutativity)
+  - name: "Addition Heavy"
+    weight: 10
+    flow:
+      - post:
+          url: "/api/v1/calculate"
+          beforeRequest: "generateAddition"
+          json:
+            operation: "add"
+            num1: "{{ num1 }}"
+            num2: "{{ num2 }}"
+          expect:
+            - statusCode: 200
+
+  # Scenario 3: Division with edge cases
+  - name: "Division Tests"
+    weight: 5
+    flow:
+      - post:
+          url: "/api/v1/calculate"
+          beforeRequest: "generateDivision"
+          json:
+            operation: "divide"
+            num1: "{{ num1 }}"
+            num2: "{{ num2 }}"
+          expect:
+            - statusCode: [200, 400]  # 400 for divide by zero
+
+  # Scenario 4: Large numbers
+  - name: "Large Number Calculations"
+    weight: 5
+    flow:
+      - post:
+          url: "/api/v1/calculate"
+          beforeRequest: "generateLargeNumbers"
+          json:
+            operation: "{{ operation }}"
+            num1: "{{ num1 }}"
+            num2: "{{ num2 }}"
+          expect:
+            - statusCode: 200
+
+  # Scenario 5: Repeated calculations (tests cache hits)
+  - name: "Cache Hit Test"
+    weight: 10
+    flow:
+      - loop:
+          - post:
+              url: "/api/v1/calculate"
+              json:
+                operation: "multiply"
+                num1: 42
+                num2: 7
+              expect:
+                - statusCode: 200
+          - think: 1
+        count: 5

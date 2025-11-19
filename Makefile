@@ -1,4 +1,4 @@
-.PHONY: build test clean run-dev run-prod stop
+.PHONY: build test clean run-dev run-prod stop load-test-install load-test load-test-quick load-test-soak
 
 # Build all services
 build:
@@ -52,3 +52,27 @@ build-ui:
 # Run frontend in development mode
 dev-ui:
 	cd services/frontend/ui && npm run dev
+
+# Install load testing dependencies
+load-test-install:
+	@echo "Installing Artillery and plugins..."
+	npm install
+
+# Run main load test
+load-test:
+	@echo "Running main load test..."
+	npm run test:load:report
+
+# Run quick smoke test
+load-test-quick:
+	@echo "Running quick load test..."
+	npm run test:quick:report
+
+# Run soak test (1 hour)
+load-test-soak:
+	@echo "Running soak test (this will take ~1 hour)..."
+	npm run test:soak:report
+
+# Clean load test reports
+load-test-clean:
+	npm run clean

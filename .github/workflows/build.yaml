@@ -50,8 +50,57 @@ jobs:
           platforms: linux/amd64,linux/arm64
           tags: ${{ steps.meta.outputs.tags }}
 
-  create_release:
+  publish_helm_chart:
     needs: build_and_publish
+    permissions:
+      contents: read
+      packages: write
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: 'latest'
+
+      - name: Install yq
+        run: |
+          wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/local/bin/yq && \
+          chmod +x /usr/local/bin/yq
+
+      - name: Get version from tag
+        id: get_version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/}
+          # Strip 'v' prefix for Helm chart version
+          CHART_VERSION=${VERSION#v}
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "CHART_VERSION=$CHART_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Update Chart.yaml with release version
+        run: |
+          yq eval -i '.version = "${{ steps.get_version.outputs.CHART_VERSION }}"' charts/calculator-microservice-java/Chart.yaml
+          yq eval -i '.appVersion = "${{ steps.get_version.outputs.CHART_VERSION }}"' charts/calculator-microservice-java/Chart.yaml
+          echo "Updated Chart.yaml:"
+          cat charts/calculator-microservice-java/Chart.yaml
+
+      - name: Package Helm chart
+        run: |
+          helm package charts/calculator-microservice-java
+
+      - name: Login to GitHub Container Registry
+        run: |
+          echo ${{ secrets.GITHUB_TOKEN }} | helm registry login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Push Helm chart to GHCR
+        run: |
+          helm push calculator-microservice-java-${{ steps.get_version.outputs.CHART_VERSION }}.tgz oci://ghcr.io/${{ github.repository }}/charts
+
+  create_release:
+    needs: [build_and_publish, publish_helm_chart]
     permissions:
       contents: write
     runs-on: ubuntu-latest
@@ -64,7 +113,11 @@ jobs:
 
       - name: Get version from tag
         id: get_version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/}
+          CHART_VERSION=${VERSION#v}
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "CHART_VERSION=$CHART_VERSION" >> $GITHUB_OUTPUT
 
       - name: Generate release notes
         id: release_notes
@@ -93,7 +146,13 @@ jobs:
 
           ## Helm Chart
 
-          Install with:
+          The Helm chart is available as an OCI artifact. Install with:
+
+          \`\`\`bash
+          helm install calculator oci://ghcr.io/${{ github.repository }}/charts/calculator-microservice-java --version ${{ steps.get_version.outputs.CHART_VERSION }}
+          \`\`\`
+
+          Or install from the source with custom image tags:
           \`\`\`bash
           helm install calculator ./charts/calculator-microservice-java \\
             --set services.frontend.image.tag=${{ steps.get_version.outputs.VERSION }} \\

@@ -1,8 +1,9 @@
-name: Build
+name: Build and Release
 
 on:
-  release:
-    types: [published]
+  push:
+    tags:
+      - 'v*'
 
 jobs:
   build_and_publish:
@@ -48,3 +49,72 @@ jobs:
           push: true
           platforms: linux/amd64,linux/arm64
           tags: ${{ steps.meta.outputs.tags }}
+
+  create_release:
+    needs: build_and_publish
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get version from tag
+        id: get_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Generate release notes
+        id: release_notes
+        run: |
+          # Get the previous tag
+          PREVIOUS_TAG=$(git describe --abbrev=0 --tags $(git rev-list --tags --skip=1 --max-count=1) 2>/dev/null || echo "")
+
+          if [ -z "$PREVIOUS_TAG" ]; then
+            # First release, get all commits
+            COMMITS=$(git log --pretty=format:"- %s (%h)" --no-merges)
+          else
+            # Get commits since previous tag
+            COMMITS=$(git log ${PREVIOUS_TAG}..HEAD --pretty=format:"- %s (%h)" --no-merges)
+          fi
+
+          # Create release notes
+          cat << EOF > release_notes.md
+          ## Docker Images
+
+          All service images are available at:
+          - \`ghcr.io/${{ github.repository }}/frontend:${{ steps.get_version.outputs.VERSION }}\`
+          - \`ghcr.io/${{ github.repository }}/add:${{ steps.get_version.outputs.VERSION }}\`
+          - \`ghcr.io/${{ github.repository }}/subtract:${{ steps.get_version.outputs.VERSION }}\`
+          - \`ghcr.io/${{ github.repository }}/multiply:${{ steps.get_version.outputs.VERSION }}\`
+          - \`ghcr.io/${{ github.repository }}/divide:${{ steps.get_version.outputs.VERSION }}\`
+
+          ## Helm Chart
+
+          Install with:
+          \`\`\`bash
+          helm install calculator ./charts/calculator-microservice-java \\
+            --set services.frontend.image.tag=${{ steps.get_version.outputs.VERSION }} \\
+            --set services.add.image.tag=${{ steps.get_version.outputs.VERSION }} \\
+            --set services.subtract.image.tag=${{ steps.get_version.outputs.VERSION }} \\
+            --set services.multiply.image.tag=${{ steps.get_version.outputs.VERSION }} \\
+            --set services.divide.image.tag=${{ steps.get_version.outputs.VERSION }}
+          \`\`\`
+
+          ## Changes
+
+          $COMMITS
+          EOF
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.get_version.outputs.VERSION }}
+          name: Release ${{ steps.get_version.outputs.VERSION }}
+          body_path: release_notes.md
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

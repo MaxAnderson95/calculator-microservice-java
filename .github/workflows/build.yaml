@@ -97,7 +97,8 @@ jobs:
 
       - name: Push Helm chart to GHCR
         run: |
-          helm push calculator-microservice-java-${{ steps.get_version.outputs.CHART_VERSION }}.tgz oci://ghcr.io/${{ github.repository_owner }}/charts
+          OWNER_LOWER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          helm push calculator-microservice-java-${{ steps.get_version.outputs.CHART_VERSION }}.tgz oci://ghcr.io/${OWNER_LOWER}
 
   create_release:
     needs: [build_and_publish, publish_helm_chart]
@@ -116,8 +117,10 @@ jobs:
         run: |
           VERSION=${GITHUB_REF#refs/tags/}
           CHART_VERSION=${VERSION#v}
+          OWNER_LOWER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
           echo "CHART_VERSION=$CHART_VERSION" >> $GITHUB_OUTPUT
+          echo "OWNER_LOWER=$OWNER_LOWER" >> $GITHUB_OUTPUT
 
       - name: Generate release notes
         id: release_notes
@@ -149,7 +152,7 @@ jobs:
           The Helm chart is available as an OCI artifact. Install with:
 
           \`\`\`bash
-          helm install calculator oci://ghcr.io/${{ github.repository_owner }}/charts/calculator-microservice-java --version ${{ steps.get_version.outputs.CHART_VERSION }}
+          helm install calculator oci://ghcr.io/${{ steps.get_version.outputs.OWNER_LOWER }}/calculator-microservice-java --version ${{ steps.get_version.outputs.CHART_VERSION }}
           \`\`\`
 
           Or install from the source with custom image tags:

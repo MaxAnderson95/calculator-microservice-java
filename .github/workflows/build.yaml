@@ -6,6 +6,9 @@ on:
 
 jobs:
   build_and_publish:
+    permissions:
+      contents: read
+      packages: write
     strategy:
       matrix:
         service: [frontend, add, subtract, multiply, divide]

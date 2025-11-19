@@ -39,7 +39,7 @@ spec:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           image: "{{ .Values.services.frontend.image.repository }}:{{ .Values.services.frontend.image.tag }}"
-          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          imagePullPolicy: {{ .Values.services.frontend.image.pullPolicy | default .Values.global.imagePullPolicy }}
           ports:
             - name: http
               containerPort: {{ .Values.services.frontend.service.port }}

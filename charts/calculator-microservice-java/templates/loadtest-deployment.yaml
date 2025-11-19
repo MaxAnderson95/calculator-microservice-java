@@ -24,7 +24,7 @@ spec:
       containers:
       - name: loadtest
         image: "{{ .Values.loadtest.image.repository }}:{{ .Values.loadtest.image.tag | default .Chart.AppVersion }}"
-        imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+        imagePullPolicy: {{ .Values.loadtest.image.pullPolicy | default .Values.global.imagePullPolicy }}
         env:
         - name: TARGET_URL
           value: "http://{{ include "calculator-microservice-java.fullname" . }}-frontend:{{ .Values.services.frontend.service.port }}"

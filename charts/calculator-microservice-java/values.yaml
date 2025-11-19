@@ -3,8 +3,8 @@
 
 # Global settings
 global:
-  # Image pull policy for all services
-  imagePullPolicy: IfNotPresent
+  # Image pull policy for all services (can be overridden per-service)
+  imagePullPolicy: Always
 
   # Global chaos engineering settings (applies to all services unless overridden)
   chaos:
@@ -23,6 +23,7 @@ database:
     image:
       repository: postgres
       tag: 16-alpine
+      pullPolicy: null  # null means use global.imagePullPolicy
     # Database credentials
     database: postgres
     username: postgres
@@ -47,6 +48,7 @@ cache:
     image:
       repository: redis
       tag: alpine
+      pullPolicy: null  # null means use global.imagePullPolicy
     # Resource limits
     resources: {}
 
@@ -59,6 +61,7 @@ services:
     image:
       repository: ghcr.io/maxanderson95/calculator-microservice-java/frontend
       tag: latest
+      pullPolicy: null  # null means use global.imagePullPolicy
     service:
       type: ClusterIP
       port: 80
@@ -88,6 +91,7 @@ services:
     image:
       repository: ghcr.io/maxanderson95/calculator-microservice-java/add
       tag: latest
+      pullPolicy: null  # null means use global.imagePullPolicy
     service:
       type: ClusterIP
       port: 80
@@ -115,6 +119,7 @@ services:
     image:
       repository: ghcr.io/maxanderson95/calculator-microservice-java/subtract
       tag: latest
+      pullPolicy: null  # null means use global.imagePullPolicy
     service:
       type: ClusterIP
       port: 80
@@ -142,6 +147,7 @@ services:
     image:
       repository: ghcr.io/maxanderson95/calculator-microservice-java/multiply
       tag: latest
+      pullPolicy: null  # null means use global.imagePullPolicy
     service:
       type: ClusterIP
       port: 80
@@ -169,6 +175,7 @@ services:
     image:
       repository: ghcr.io/maxanderson95/calculator-microservice-java/divide
       tag: latest
+      pullPolicy: null  # null means use global.imagePullPolicy
     service:
       type: ClusterIP
       port: 80
@@ -232,6 +239,7 @@ loadtest:
   image:
     repository: ghcr.io/maxanderson95/calculator-microservice-java/loadtest
     tag: latest
+    pullPolicy: null  # null means use global.imagePullPolicy
   # Resource limits for load test pod
   resources: {}
     # limits:

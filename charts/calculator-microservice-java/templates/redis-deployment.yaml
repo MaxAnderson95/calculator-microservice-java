@@ -21,7 +21,7 @@ spec:
       containers:
         - name: redis
           image: "{{ .Values.cache.redis.image.repository }}:{{ .Values.cache.redis.image.tag }}"
-          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          imagePullPolicy: {{ .Values.cache.redis.image.pullPolicy | default .Values.global.imagePullPolicy }}
           command: ["redis-server"]
           ports:
             - name: redis

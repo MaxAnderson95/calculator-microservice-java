@@ -41,7 +41,7 @@ spec:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           image: "{{ $service.image.repository }}:{{ $service.image.tag }}"
-          imagePullPolicy: {{ $.Values.global.imagePullPolicy }}
+          imagePullPolicy: {{ $service.image.pullPolicy | default $.Values.global.imagePullPolicy }}
           ports:
             - name: http
               containerPort: {{ $service.service.port }}

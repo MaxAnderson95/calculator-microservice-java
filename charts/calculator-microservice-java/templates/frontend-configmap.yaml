@@ -20,6 +20,9 @@ data:
   {{- if eq .Values.cache.type "redis" }}
   REDIS_HOST: {{ include "calculator-microservice-java.fullname" . }}-redis
   REDIS_PORT: "6379"
+  {{- else }}
+  # Disable Redis health indicator when using memory cache
+  MANAGEMENT_HEALTH_REDIS_ENABLED: "false"
   {{- end }}
 
   # Chaos engineering

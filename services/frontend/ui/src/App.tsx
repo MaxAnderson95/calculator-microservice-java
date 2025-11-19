@@ -1,7 +1,13 @@
 import { Calculator } from './components/Calculator'
+import { ThemeSelector } from './components/ThemeSelector'
 
 function App() {
-  return <Calculator />
+  return (
+    <>
+      <ThemeSelector />
+      <Calculator />
+    </>
+  )
 }
 
 export default App
